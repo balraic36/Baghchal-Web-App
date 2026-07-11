@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #1a1a2e;
+    color: #ffffff;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Fixed the grid issue here */
+.board-grid {
+    position: relative;
+    background: #222831;
+    border: 4px solid #393e46;
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+}
+
+.line-svg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.node {
+    position: relative;
+    z-index: 10;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.piece {
+    width: 75%;
+    height: 75%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+    transition: transform 0.2s ease;
+}
+
+.piece.tiger {
+    background: radial-gradient(circle, #ff6b6b, #c92a2a);
+    border: 2px solid #fff;
+}
+
+.piece.goat {
+    background: radial-gradient(circle, #4dabf7, #1971c2);
+    border: 2px solid #fff;
+}
+
+.selected {
+    transform: scale(1.2);
+    border-color: #fab005;
+    box-shadow: 0 0 15px #fab005;
+}
