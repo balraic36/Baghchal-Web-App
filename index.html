@@ -3,110 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baghchal Professional Prototype</title>
+    <title>Baghchal Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #1a1a2e;
-            color: #ffffff;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .board-grid {
-            position: relative;
-            background: #222831;
-            border: 4px solid #393e46;
-            border-radius: 12px;
-        }
-        .line-svg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-        }
-        .node {
-            position: relative;
-            z-index: 10;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .piece {
-            width: 80%;
-            height: 80%;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .piece.tiger {
-            background: radial-gradient(circle, #ff6b6b, #c92a2a);
-            border: 2px solid #fff;
-        }
-        .piece.goat {
-            background: radial-gradient(circle, #4dabf7, #1971c2);
-            border: 2px solid #fff;
-        }
-        .selected {
-            transform: scale(1.15);
-            box-shadow: 0 0 15px #fab005 !important;
-            border-color: #fab005 !important;
-        }
-        .valid-move::after {
-            content: '';
-            width: 16px;
-            height: 16px;
-            background-color: #2b8a3e;
-            border-radius: 50%;
-            position: absolute;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(0.8); opacity: 0.5; }
-            50% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(0.8); opacity: 0.5; }
-        }
-        /* VFX Overlays */
-        .vfx-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 50;
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .jail-shutter {
-            background: rgba(0,0,0,0.6);
-            border: 10px repeating-linear-gradient(45deg, #fc0, #fc0 10px, #000 10px, #000 20px);
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="p-4 max-w-md mx-auto min-h-screen flex flex-col justify-between">
 
-    <!-- Top Bar: Stats & Currency -->
+    <div id="selection-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+        <div class="bg-[#1f4068] p-6 rounded-2xl text-center border-2 border-emerald-400">
+            <h2 class="text-2xl font-bold text-white mb-4">Select Your Side</h2>
+            <div class="flex gap-4 justify-center">
+                <button onclick="startGame('TIGER')" class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-xl font-bold text-white text-lg">🐅 TIGER</button>
+                <button onclick="startGame('GOAT')" class="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl font-bold text-white text-lg">🐐 GOAT</button>
+            </div>
+        </div>
+    </div>
+
     <div class="flex justify-between items-center bg-[#16213e] p-3 rounded-xl shadow-md mb-2">
         <div class="flex items-center space-x-2">
             <span class="text-2xl">🪙</span>
             <div>
-                <p class="text-xs text-gray-400">Your Coins</p>
+                <p class="text-xs text-gray-400">Coins</p>
                 <p id="coin-count" class="font-bold text-yellow-400 text-sm">1,500</p>
             </div>
         </div>
         <div class="text-center bg-[#0f3460] px-4 py-1 rounded-lg">
             <p class="text-xs text-gray-400">TURN</p>
-            <p id="current-turn" class="font-bold text-emerald-400 text-sm tracking-wider">GOAT</p>
+            <p id="current-turn" class="font-bold text-emerald-400 text-sm tracking-wider">-</p>
         </div>
         <div class="text-right">
             <p class="text-xs text-gray-400">Timer</p>
@@ -114,413 +37,47 @@
         </div>
     </div>
 
-    <!-- Scoreboard -->
-    <div class="grid grid-cols-2 gap-2 mb-2 text-center text-xs">
-        <div class="bg-[#1f4068] p-2 rounded-lg">
-            <p class="text-gray-300">Goats Left: <span id="goats-left" class="font-bold text-blue-300">20</span></p>
-        </div>
-        <div class="bg-[#1f4068] p-2 rounded-lg">
-            <p class="text-gray-300">Goats Eaten: <span id="goats-eaten" class="font-bold text-rose-400">0 / 5</span></p>
-        </div>
-    </div>
-
-    <!-- Main Game Board Container -->
     <div class="relative w-full aspect-square max-w-[360px] mx-auto my-2">
-        <div class="board-grid w-full h-full grid grid-cols-5 grid-rows-5 p-2" id="board">
-            <!-- SVGs for Board Lines -->
+        <div class="board-grid w-full h-full p-2" id="board">
             <svg class="line-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <!-- Outer Border and Grids -->
                 <line x1="10" y1="10" x2="90" y2="10" stroke="#4e54c8" stroke-width="1"/>
-                <line x1="10" y1="30" x2="90" y2="30" stroke="#4e54c8" stroke-width="0.7"/>
-                <line x1="10" y1="50" x2="90" y2="50" stroke="#4e54c8" stroke-width="0.7"/>
-                <line x1="10" y1="70" x2="90" y2="70" stroke="#4e54c8" stroke-width="0.7"/>
+                <line x1="10" y1="30" x2="90" y2="30" stroke="#4e54c8" stroke-width="1"/>
+                <line x1="10" y1="50" x2="90" y2="50" stroke="#4e54c8" stroke-width="1"/>
+                <line x1="10" y1="70" x2="90" y2="70" stroke="#4e54c8" stroke-width="1"/>
                 <line x1="10" y1="90" x2="90" y2="90" stroke="#4e54c8" stroke-width="1"/>
                 
                 <line x1="10" y1="10" x2="10" y2="90" stroke="#4e54c8" stroke-width="1"/>
-                <line x1="30" y1="10" x2="30" y2="90" stroke="#4e54c8" stroke-width="0.7"/>
-                <line x1="50" y1="10" x2="50" y2="90" stroke="#4e54c8" stroke-width="0.7"/>
-                <line x1="70" y1="10" x2="70" y2="90" stroke="#4e54c8" stroke-width="0.7"/>
+                <line x1="30" y1="10" x2="30" y2="90" stroke="#4e54c8" stroke-width="1"/>
+                <line x1="50" y1="10" x2="50" y2="90" stroke="#4e54c8" stroke-width="1"/>
+                <line x1="70" y1="10" x2="70" y2="90" stroke="#4e54c8" stroke-width="1"/>
                 <line x1="90" y1="10" x2="90" y2="90" stroke="#4e54c8" stroke-width="1"/>
 
-                <!-- Diagonals -->
-                <line x1="10" y1="10" x2="90" y2="90" stroke="#4e54c8" stroke-width="0.8"/>
-                <line x1="90" y1="10" x2="10" y2="90" stroke="#4e54c8" stroke-width="0.8"/>
+                <line x1="10" y1="10" x2="90" y2="90" stroke="#4e54c8" stroke-width="1"/>
+                <line x1="90" y1="10" x2="10" y2="90" stroke="#4e54c8" stroke-width="1"/>
                 
-                <!-- Diamond Diagonals -->
-                <line x1="50" y1="10" x2="90" y2="50" stroke="#4e54c8" stroke-width="0.6"/>
-                <line x1="90" y1="50" x2="50" y2="90" stroke="#4e54c8" stroke-width="0.6"/>
-                <line x1="50" y1="90" x2="10" y2="50" stroke="#4e54c8" stroke-width="0.6"/>
-                <line x1="10" y1="50" x2="50" y2="10" stroke="#4e54c8" stroke-width="0.6"/>
+                <line x1="50" y1="10" x2="90" y2="50" stroke="#4e54c8" stroke-width="1"/>
+                <line x1="90" y1="50" x2="50" y2="90" stroke="#4e54c8" stroke-width="1"/>
+                <line x1="50" y1="90" x2="10" y2="50" stroke="#4e54c8" stroke-width="1"/>
+                <line x1="10" y1="50" x2="50" y2="10" stroke="#4e54c8" stroke-width="1"/>
             </svg>
-
-            <!-- Dynamic Nodes will be injected here by JS -->
-        </div>
-
-        <!-- Real-time Interactive Visual Effects Layer -->
-        <div id="vfx-jail" class="vfx-layer jail-shutter text-yellow-400 flex-col">
-            <span>🐅 TIGER TRAPPED!</span>
-            <span class="text-sm mt-2">Jail Shutter Activated</span>
-        </div>
-        <div id="vfx-eat" class="vfx-layer bg-red-900/70 text-white flex-col">
-            <span>🐐 GOAT CAPTURED!</span>
-            <span class="text-sm mt-2">RIP Goat</span>
         </div>
     </div>
 
-    <!-- Quick Chat and Interactive Controls -->
-    <div class="bg-[#16213e] p-3 rounded-xl shadow-md mt-2 space-y-2">
-        <p class="text-xs text-gray-400 font-semibold mb-1">💬 Quick Chat Template</p>
-        <div class="flex gap-1 overflow-x-auto pb-1 text-[11px]">
-            <button onclick="triggerQuickChat('Best of Luck!')" class="bg-[#0f3460] px-3 py-1.5 rounded-full whitespace-nowrap border border-gray-700 active:bg-blue-600">👍 Best of Luck!</button>
-            <button onclick="triggerQuickChat('Great Move!')" class="bg-[#0f3460] px-3 py-1.5 rounded-full whitespace-nowrap border border-gray-700 active:bg-blue-600">🧠 Great Move!</button>
-            <button onclick="triggerQuickChat('Oops! Hazard!')" class="bg-[#0f3460] px-3 py-1.5 rounded-full whitespace-nowrap border border-gray-700 active:bg-blue-600">😮 Oops!</button>
-            <button onclick="triggerQuickChat('Well Played!')" class="bg-[#0f3460] px-3 py-1.5 rounded-full whitespace-nowrap border border-gray-700 active:bg-blue-600">🤝 Well Played</button>
+    <div class="bg-[#16213e] p-3 rounded-xl shadow-md mt-2">
+        <p class="text-sm text-gray-300 font-bold mb-2">🏆 Top Players</p>
+        <div class="flex gap-2 mb-2 text-[10px]">
+            <button class="bg-blue-600 px-2 py-1 rounded text-white">Today</button>
+            <button class="bg-[#0f3460] px-2 py-1 rounded text-gray-400">This Week</button>
+            <button class="bg-[#0f3460] px-2 py-1 rounded text-gray-400">This Month</button>
+            <button class="bg-[#0f3460] px-2 py-1 rounded text-gray-400">All Time</button>
         </div>
-        <div id="chat-display" class="text-xs text-center font-bold text-emerald-400 h-4 mt-1"></div>
+        <div class="text-xs space-y-1">
+            <div class="flex justify-between bg-[#1f4068] p-1.5 rounded"><span class="text-yellow-400">1. Ram_Pro</span><span>2500 🪙</span></div>
+            <div class="flex justify-between bg-[#1f4068] p-1.5 rounded"><span class="text-gray-300">2. TigerKing</span><span>2100 🪙</span></div>
+            <div class="flex justify-between bg-[#1f4068] p-1.5 rounded"><span class="text-orange-400">3. GoatMaster</span><span>1850 🪙</span></div>
+        </div>
     </div>
 
-    <!-- Bottom Actions: Shop & Rewards Mockup -->
-    <div class="grid grid-cols-2 gap-2 mt-2">
-        <button onclick="watchAd()" class="bg-gradient-to-r from-purple-600 to-indigo-600 p-2.5 rounded-xl text-xs font-bold shadow active:scale-95 transition">
-            📺 Watch Ad (+50 🪙)
-        </button>
-        <button onclick="openPremiumShop()" class="bg-gradient-to-r from-amber-500 to-orange-600 p-2.5 rounded-xl text-xs font-bold shadow active:scale-95 transition">
-            👑 Premium Shop (Skins)
-        </button>
-    </div>
-
-    <!-- Audio API setup logic placeholders -->
-    <script>
-        // Audio Synthesizer for standalone mobile playback without external files
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(type) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            if(type === 'move') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-            } else if(type === 'eat') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.3);
-                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-            } else if(type === 'trap') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-                osc.frequency.setValueAtTime(220, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
-            }
-        }
-
-        // Core Game Engine State
-        let boardState = Array(5).fill(null).map(() => Array(5).fill(0));
-        let currentTurn = 'GOAT'; // GOAT starts
-        let goatsLeftToPlace = 20;
-        let goatsEaten = 0;
-        let coins = 1500;
-        let selectedPiece = null;
-        let turnTimer = 60;
-        let timerInterval;
-
-        // Initializing Tiger Positions (Corners)
-        boardState[0][0] = 'TIGER';
-        boardState[0][4] = 'TIGER';
-        boardState[4][0] = 'TIGER';
-        boardState[4][4] = 'TIGER';
-
-        const boardEl = document.getElementById('board');
-
-        function initBoard() {
-            boardEl.querySelectorAll('.node').forEach(n => n.remove());
-            for (let r = 0; r < 5; r++) {
-                for (let c = 0; c < 5; c++) {
-                    const node = document.createElement('div');
-                    node.className = 'node flex items-center justify-center w-full h-full';
-                    node.dataset.row = r;
-                    node.dataset.col = c;
-                    
-                    const pieceType = boardState[r][c];
-                    if (pieceType) {
-                        const piece = document.createElement('div');
-                        piece.className = `piece ${pieceType.toLowerCase()}`;
-                        piece.innerText = pieceType === 'TIGER' ? '🐅' : '🐐';
-                        node.appendChild(piece);
-                    }
-                    
-                    node.addEventListener('click', () => handleNodeClick(r, c));
-                    boardEl.appendChild(node);
-                }
-            }
-            updateUIStrings();
-        }
-
-        function updateUIStrings() {
-            document.getElementById('current-turn').innerText = currentTurn;
-            document.getElementById('current-turn').className = currentTurn === 'GOAT' ? 'font-bold text-blue-400 text-sm tracking-wider' : 'font-bold text-rose-400 text-sm tracking-wider';
-            document.getElementById('goats-left').innerText = goatsLeftToPlace;
-            document.getElementById('goats-eaten').innerText = `${goatsEaten} / 5`;
-            document.getElementById('coin-count').innerText = coins.toLocaleString();
-        }
-
-        function startTimer() {
-            clearInterval(timerInterval);
-            turnTimer = 60;
-            document.getElementById('game-timer').innerText = turnTimer + 's';
-            timerInterval = setInterval(() => {
-                turnTimer--;
-                document.getElementById('game-timer').innerText = turnTimer + 's';
-                if(turnTimer <= 0) {
-                    clearInterval(timerInterval);
-                    alert(`${currentTurn} ran out of time! Game Over.`);
-                    resetGame();
-                }
-            }, 1000);
-        }
-
-        function handleNodeClick(r, c) {
-            const clickedType = boardState[r][c];
-
-            if (currentTurn === 'GOAT' && goatsLeftToPlace > 0) {
-                // Placement Phase for Goats
-                if (clickedType === 0) {
-                    boardState[r][c] = 'GOAT';
-                    goatsLeftToPlace--;
-                    playSound('move');
-                    switchTurn();
-                }
-                return;
-            }
-
-            // Movement Phase
-            if (selectedPiece) {
-                if (selectedPiece.r === r && selectedPiece.c === c) {
-                    // Deselect
-                    selectedPiece = null;
-                    clearHighlights();
-                    return;
-                }
-                
-                // Attempt to move to targeted node
-                if (isValidMove(selectedPiece.r, selectedPiece.c, r, c)) {
-                    executeMove(selectedPiece.r, selectedPiece.c, r, c);
-                } else {
-                    // Switch selection if clicked another owned piece
-                    if (boardState[r][c] === currentTurn) {
-                        selectNewPiece(r, c);
-                    }
-                }
-            } else {
-                if (clickedType === currentTurn) {
-                    selectNewPiece(r, c);
-                }
-            }
-        }
-
-        function selectNewPiece(r, c) {
-            clearHighlights();
-            selectedPiece = { r, c };
-            const node = boardEl.querySelector(`[data-row='${r}'][data-col='${c}']`);
-            node.querySelector('.piece').classList.add('selected');
-            highlightValidMoves(r, c);
-        }
-
-        function clearHighlights() {
-            boardEl.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
-            boardEl.querySelectorAll('.node').forEach(n => n.classList.remove('valid-move'));
-        }
-
-        function isAdjacent(r1, c1, r2, c2) {
-            const dr = Math.abs(r2 - r1);
-            const dc = Math.abs(c2 - c1);
-            if (dr > 1 || dc > 1) return false;
-            if (dr === 1 && dc === 1) {
-                // Diagonal connection logic for traditional board matrix
-                return (r1 + c1) % 2 === 0;
-            }
-            return true;
-        }
-
-        function isValidMove(r1, c1, r2, c2) {
-            if (boardState[r2][c2] !== 0) return false; // Target must be empty
-
-            // Standard adjacent steps
-            if (isAdjacent(r1, c1, r2, c2)) return true;
-
-            // Tiger jumping/eating logic
-            if (boardState[r1][c1] === 'TIGER') {
-                const dr = r2 - r1;
-                const dc = c2 - c1;
-                if (Math.abs(dr) === 2 && dc === 0) {
-                    const intermediateRow = r1 + dr / 2;
-                    return boardState[intermediateRow][c1] === 'GOAT';
-                }
-                if (Math.abs(dc) === 2 && dr === 0) {
-                    const intermediateCol = c1 + dc / 2;
-                    return boardState[r1][intermediateCol] === 'GOAT';
-                }
-                if (Math.abs(dr) === 2 && Math.abs(dc) === 2) {
-                    if ((r1 + c1) % 2 === 0) {
-                        const intermediateRow = r1 + dr / 2;
-                        const intermediateCol = c1 + dc / 2;
-                        return boardState[intermediateRow][intermediateCol] === 'GOAT';
-                    }
-                }
-            }
-            return false;
-        }
-
-        function highlightValidMoves(r, c) {
-            for (let i = 0; i < 5; i++) {
-                for (let j = 0; j < 5; j++) {
-                    if (isValidMove(r, c, i, j)) {
-                        boardEl.querySelector(`[data-row='${i}'][data-col='${j}']`).classList.add('valid-move');
-                    }
-                }
-            }
-        }
-
-        function executeMove(r1, c1, r2, c2) {
-            const type = boardState[r1][c1];
-            boardState[r2][c2] = type;
-            boardState[r1][c1] = 0;
-
-            const dr = Math.abs(r2 - r1);
-            const dc = Math.abs(c2 - c1);
-
-            // If Tiger jumped over a goat to capture it
-            if (type === 'TIGER' && (dr === 2 || dc === 2)) {
-                const midR = (r1 + r2) / 2;
-                const midC = (c1 + c2) / 2;
-                boardState[midR][midC] = 0; // Remove eaten goat
-                goatsEaten++;
-                triggerVFX('vfx-eat');
-                playSound('eat');
-            } else {
-                playSound('move');
-            }
-
-            // Check if this move trapped any specific tiger to trigger Jail Shutter VFX
-            checkTigerTraps();
-
-            selectedPiece = null;
-            clearHighlights();
-            
-            if (checkWinConditions()) return;
-
-            switchTurn();
-        }
-
-        function checkTigerTraps() {
-            // Check if any tiger is newly trapped to show jail animation
-            for (let r = 0; r < 5; r++) {
-                for (let c = 0; c < 5; c++) {
-                    if (boardState[r][c] === 'TIGER') {
-                        let canMove = false;
-                        for (let i = 0; i < 5; i++) {
-                            for (let j = 0; j < 5; j++) {
-                                if (isValidMove(r, c, i, j)) { canMove = true; break; }
-                            }
-                            if(canMove) break;
-                        }
-                        if (!canMove) {
-                            triggerVFX('vfx-jail');
-                            playSound('trap');
-                        }
-                    }
-                }
-            }
-        }
-
-        function triggerVFX(id) {
-            const el = document.getElementById(id);
-            el.style.opacity = '1';
-            setTimeout(() => el.style.opacity = '0', 1400);
-        }
-
-        function switchTurn() {
-            currentTurn = currentTurn === 'GOAT' ? 'TIGER' : 'GOAT';
-            initBoard();
-            startTimer();
-        }
-
-        function checkWinConditions() {
-            if (goatsEaten >= 5) {
-                alert('🐅 Tigers Win! 5 Goats Captured.');
-                coins += 200;
-                resetGame();
-                return true;
-            }
-
-            // Check if Tigers have any moves left
-            let tigerMoves = 0;
-            for (let r = 0; r < 5; r++) {
-                for (let c = 0; c < 5; c++) {
-                    if (boardState[r][c] === 'TIGER') {
-                        for (let i = 0; i < 5; i++) {
-                            for (let j = 0; j < 5; j++) {
-                                if (isValidMove(r, c, i, j)) tigerMoves++;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (tigerMoves === 0 && goatsLeftToPlace === 0) {
-                alert('🐐 Goats Win! All Tigers are trapped.');
-                coins += 300;
-                resetGame();
-                return true;
-            }
-            return false;
-        }
-
-        function triggerQuickChat(msg) {
-            const display = document.getElementById('chat-display');
-            display.innerText = msg;
-            setTimeout(() => display.innerText = '', 3000);
-        }
-
-        function watchAd() {
-            alert("Playing Reward Video Ad...");
-            setTimeout(() => {
-                coins += 50;
-                updateUIStrings();
-                alert("Earned 50 🪙 coins!");
-            }, 1000);
-        }
-
-        function openPremiumShop() {
-            alert("Premium Shop Preview:
-1. Golden Tiger Skin - 500 Coins
-2. Royal Wooden Board - 1,000 Coins
-Coming soon in next updates!");
-        }
-
-        function resetGame() {
-            boardState = Array(5).fill(null).map(() => Array(5).fill(0));
-            boardState[0][0] = 'TIGER'; boardState[0][4] = 'TIGER';
-            boardState[4][0] = 'TIGER'; boardState[4][4] = 'TIGER';
-            currentTurn = 'GOAT';
-            goatsLeftToPlace = 20;
-            goatsEaten = 0;
-            initBoard();
-            startTimer();
-        }
-
-        // Run on load
-        initBoard();
-        startTimer();
-    </script>
+    <script src="game.js"></script>
 </body>
 </html>
