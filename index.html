@@ -2,440 +2,373 @@
 <html lang="ne">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baghchal Professional Prototype</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Baghchal Pro - Ultimate Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #1a1a2e;
-            color: #ffffff;
+            background-color: #f0f4f8; /* उज्यालो ब्याकग्राउन्ड */
+            color: #1f2937;
+            user-select: none;
             -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            overflow: hidden;
         }
-        .board-grid {
+        
+        /* Screens System */
+        .screen { display: none; flex-direction: column; height: 100vh; padding: 16px; justify-content: center; align-items: center; }
+        .active-screen { display: flex; }
+        
+        /* Board UI */
+        .board-container {
             position: relative;
-            background: #222831;
-            border: 4px solid #393e46;
+            background: #e6c280; /* काठको जस्तो उज्यालो रङ */
+            border: 6px solid #8b5a2b;
             border-radius: 12px;
-        }
-        .line-svg {
-            position: absolute;
-            top: 0;
-            left: 0;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
             width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
+            max-width: 360px;
+            aspect-ratio: 1/1;
         }
-        .node {
-            position: relative;
-            z-index: 10;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+        .line-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+        .board-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); z-index: 10; padding: 4%; gap: 0; }
+        
+        /* Nodes & Pieces */
+        .node { position: relative; z-index: 10; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .piece {
-            width: 80%;
-            height: 80%;
+            width: 75%; height: 75%;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease;
+            z-index: 20;
+            border: 2px solid white;
         }
-        .piece.tiger {
-            background: radial-gradient(circle, #ff6b6b, #c92a2a);
-            border: 2px solid #fff;
-        }
-        .piece.goat {
-            background: radial-gradient(circle, #4dabf7, #1971c2);
-            border: 2px solid #fff;
-        }
-        .selected {
-            transform: scale(1.15);
-            box-shadow: 0 0 15px #fab005 !important;
-            border-color: #fab005 !important;
-        }
+        .piece.tiger { background: radial-gradient(circle, #ef4444, #991b1b); color: white; }
+        .piece.goat { background: radial-gradient(circle, #3b82f6, #1e3a8a); color: white; }
+        
+        /* Animations & Highlights */
+        .selected { transform: scale(1.25); box-shadow: 0 0 0 4px #fbbf24, 0 10px 15px rgba(0,0,0,0.5); z-index: 30; }
         .valid-move::after {
-            content: '';
-            width: 16px;
-            height: 16px;
-            background-color: #2b8a3e;
-            border-radius: 50%;
-            position: absolute;
-            animation: pulse 1.5s infinite;
+            content: ''; position: absolute; width: 25%; height: 25%; background: rgba(34, 197, 94, 0.85); border-radius: 50%; z-index: 15; animation: pulse 1s infinite;
         }
-        @keyframes pulse {
-            0% { transform: scale(0.8); opacity: 0.5; }
-            50% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(0.8); opacity: 0.5; }
-        }
-        /* VFX Overlays */
+        @keyframes pulse { 0%, 100% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 1; } }
+        
+        /* VFX */
         .vfx-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 50;
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            position: absolute; inset: 0; z-index: 50; pointer-events: none;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: bold; opacity: 0; transition: opacity 0.3s ease; text-align: center;
         }
-        .jail-shutter {
-            background: rgba(0,0,0,0.6);
-            border: 10px repeating-linear-gradient(45deg, #fc0, #fc0 10px, #000 10px, #000 20px);
-        }
+        .vfx-jail { background: rgba(0,0,0,0.7); border: 8px dashed #fbbf24; color: #fbbf24; }
+        .vfx-eat { background: rgba(185, 28, 28, 0.8); color: white; }
     </style>
 </head>
-<body class="p-4 max-w-md mx-auto min-h-screen flex flex-col justify-between">
+<body>
 
-    <!-- Top Bar: Stats & Currency -->
-    <div class="flex justify-between items-center bg-[#16213e] p-3 rounded-xl shadow-md mb-2">
-        <div class="flex items-center space-x-2">
-            <span class="text-2xl">🪙</span>
-            <div>
-                <p class="text-xs text-gray-400">Your Coins</p>
-                <p id="coin-count" class="font-bold text-yellow-400 text-sm">1,500</p>
+    <div id="screen-menu" class="screen active-screen w-full max-w-md mx-auto text-center">
+        <h1 class="text-5xl font-extrabold text-orange-600 mb-2 drop-shadow-md">बाघचाल</h1>
+        <p class="text-gray-500 mb-8 font-bold text-sm">Professional Edition</p>
+        
+        <div class="w-full space-y-4">
+            <button onclick="showScreen('screen-rules')" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-xl shadow-lg active:scale-95 transition">📖 नियम पढ्नुहोस्</button>
+            <button onclick="showScreen('screen-mode')" class="w-full bg-green-500 text-white py-4 rounded-xl font-bold text-xl shadow-lg active:scale-95 transition">🎮 खेल्न सुरु गर्नुहोस्</button>
+        </div>
+    </div>
+
+    <div id="screen-rules" class="screen w-full max-w-md mx-auto text-center">
+        <h2 class="text-3xl font-bold text-orange-600 mb-4">खेल्ने नियम</h2>
+        <div class="bg-white p-6 rounded-2xl w-full text-left space-y-3 mb-6 shadow-md border border-gray-200 text-sm text-gray-700">
+            <p>१. <b>बाघ (Tiger):</b> ४ वटा बाघ सुरुमै बोर्डको कुनामा हुन्छन्। बाघले बाख्रालाई नाघेर (Jump) खान्छ।</p>
+            <p>२. <b>बाख्रा (Goat):</b> २० वटा बाख्रा हुन्छन्। सुरुमा पालैपालो खाली ठाउँमा बाख्रा राख्नुपर्छ। सबै राखिसकेपछि मात्र सार्न मिल्छ।</p>
+            <p>३. <b>जित (Win):</b> ५ वटा बाख्रा खाए बाघले जित्छ। बाघलाई चल्न नमिल्ने गरी थुनेमा बाख्राले जित्छ।</p>
+            <p>४. <b>समय (Timer):</b> हरेक चाल ६० सेकेन्डभित्र चलिसक्नुपर्छ, नत्र हारिन्छ।</p>
+        </div>
+        <button onclick="showScreen('screen-menu')" class="w-full bg-gray-300 text-gray-800 py-4 rounded-xl font-bold text-xl active:scale-95 transition">⬅ पछाडि</button>
+    </div>
+
+    <div id="screen-mode" class="screen w-full max-w-md mx-auto">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">मोड छान्नुहोस्</h2>
+        
+        <div class="w-full space-y-4 mb-6">
+            <button onclick="startOfflineGame()" class="w-full bg-indigo-500 text-white py-4 rounded-xl font-bold text-lg shadow-md active:scale-95 transition">👥 Offline (Pass & Play)</button>
+            
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <p class="text-sm text-gray-500 mb-3 font-bold text-center">🤖 AI सँग खेल्नुहोस्</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="alert('Easy AI Mode: यो सुविधा अर्को अपडेटमा आउनेछ!')" class="bg-gray-100 py-2 rounded-lg font-bold text-green-600 text-sm active:bg-gray-200 border">Easy</button>
+                    <button onclick="alert('Medium AI Mode: यो सुविधा अर्को अपडेटमा आउनेछ!')" class="bg-gray-100 py-2 rounded-lg font-bold text-orange-500 text-sm active:bg-gray-200 border">Medium</button>
+                    <button onclick="alert('Hard AI Mode: यो सुविधा अर्को अपडेटमा आउनेछ!')" class="bg-gray-100 py-2 rounded-lg font-bold text-red-500 text-sm active:bg-gray-200 border">Hard</button>
+                </div>
+            </div>
+
+            <button onclick="alert('Online Multiplayer खेल्नको लागि Database सर्भर जोड्न बाँकी छ।')" class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold text-lg shadow-md active:scale-95 transition">🌐 Online (Guest Mode)</button>
+        </div>
+        
+        <button onclick="showScreen('screen-menu')" class="w-full bg-gray-300 text-gray-800 py-4 rounded-xl font-bold text-xl active:scale-95 transition">⬅ पछाडि</button>
+    </div>
+
+    <div id="screen-game" class="screen w-full max-w-md mx-auto justify-between p-2">
+        
+        <div class="flex justify-between items-center bg-white p-3 rounded-xl w-full mb-2 shadow-sm border border-gray-200">
+            <div class="text-center">
+                <p class="text-[10px] text-gray-400 font-bold uppercase">Turn</p>
+                <p id="turn-indicator" class="font-bold text-blue-600 text-base">🐐 GOAT</p>
+            </div>
+            <div class="text-center">
+                <p class="text-[10px] text-gray-400 font-bold uppercase">Goats Left</p>
+                <p id="goats-left" class="font-bold text-gray-800 text-base">20</p>
+            </div>
+            <div class="text-center">
+                <p class="text-[10px] text-gray-400 font-bold uppercase">Eaten</p>
+                <p id="goats-eaten" class="font-bold text-red-500 text-base">0 / 5</p>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] text-gray-400 font-bold uppercase">Timer</p>
+                <p id="timer" class="font-bold text-red-500 text-base">60s</p>
             </div>
         </div>
-        <div class="text-center bg-[#0f3460] px-4 py-1 rounded-lg">
-            <p class="text-xs text-gray-400">TURN</p>
-            <p id="current-turn" class="font-bold text-emerald-400 text-sm tracking-wider">GOAT</p>
-        </div>
-        <div class="text-right">
-            <p class="text-xs text-gray-400">Timer</p>
-            <p id="game-timer" class="font-bold text-rose-500 text-sm">60s</p>
-        </div>
-    </div>
 
-    <!-- Scoreboard -->
-    <div class="grid grid-cols-2 gap-2 mb-2 text-center text-xs">
-        <div class="bg-[#1f4068] p-2 rounded-lg">
-            <p class="text-gray-300">Goats Left: <span id="goats-left" class="font-bold text-blue-300">20</span></p>
-        </div>
-        <div class="bg-[#1f4068] p-2 rounded-lg">
-            <p class="text-gray-300">Goats Eaten: <span id="goats-eaten" class="font-bold text-rose-400">0 / 5</span></p>
-        </div>
-    </div>
-
-    <!-- Main Game Board Container -->
-    <div class="relative w-full aspect-square max-w-[360px] mx-auto my-2">
-        <div class="board-grid w-full h-full grid grid-cols-5 grid-rows-5 p-2" id="board">
-            <!-- SVGs for Board Lines -->
-            <svg class="line-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <!-- Outer Border and Grids -->
-                <line x1="10" y1="10" x2="90" y2="10" stroke="#4e54c8" stroke-width="1"/>
-                <line x1="10" y1="30" x2="90" y2="30" stroke="#4e54c8" stroke-width="0.7"/>
-                <line x1="10" y1="50" x2="90" y2="50" stroke="#4e54c8" stroke-width="0.7"/>
-                <line x1="10" y1="70" x2="90" y2="70" stroke="#4e54c8" stroke-width="0.7"/>
-                <line x1="10" y1="90" x2="90" y2="90" stroke="#4e54c8" stroke-width="1"/>
-                
-                <line x1="10" y1="10" x2="10" y2="90" stroke="#4e54c8" stroke-width="1"/>
-                <line x1="30" y1="10" x2="30" y2="90" stroke="#4e54c8" stroke-width="0.7"/>
-                <line x1="50" y1="10" x2="50" y2="90" stroke="#4e54c8" stroke-width="0.7"/>
-                <line x1="70" y1="10" x2="70" y2="90" stroke="#4e54c8" stroke-width="0.7"/>
-                <line x1="90" y1="10" x2="90" y2="90" stroke="#4e54c8" stroke-width="1"/>
-
-                <!-- Diagonals -->
-                <line x1="10" y1="10" x2="90" y2="90" stroke="#4e54c8" stroke-width="0.8"/>
-                <line x1="90" y1="10" x2="10" y2="90" stroke="#4e54c8" stroke-width="0.8"/>
-                
-                <!-- Diamond Diagonals -->
-                <line x1="50" y1="10" x2="90" y2="50" stroke="#4e54c8" stroke-width="0.6"/>
-                <line x1="90" y1="50" x2="50" y2="90" stroke="#4e54c8" stroke-width="0.6"/>
-                <line x1="50" y1="90" x2="10" y2="50" stroke="#4e54c8" stroke-width="0.6"/>
-                <line x1="10" y1="50" x2="50" y2="10" stroke="#4e54c8" stroke-width="0.6"/>
+        <div class="board-container mx-auto">
+            <svg class="line-svg" viewBox="0 0 100 100">
+                <g stroke="#5c3a21" stroke-width="1.2">
+                    <line x1="10" y1="10" x2="90" y2="10"/><line x1="10" y1="30" x2="90" y2="30"/>
+                    <line x1="10" y1="50" x2="90" y2="50"/><line x1="10" y1="70" x2="90" y2="70"/>
+                    <line x1="10" y1="90" x2="90" y2="90"/><line x1="10" y1="10" x2="10" y2="90"/>
+                    <line x1="30" y1="10" x2="30" y2="90"/><line x1="50" y1="10" x2="50" y2="90"/>
+                    <line x1="70" y1="10" x2="70" y2="90"/><line x1="90" y1="10" x2="90" y2="90"/>
+                    <line x1="10" y1="10" x2="90" y2="90"/><line x1="90" y1="10" x2="10" y2="90"/>
+                    <line x1="50" y1="10" x2="90" y2="50"/><line x1="90" y1="50" x2="50" y2="90"/>
+                    <line x1="50" y1="90" x2="10" y2="50"/><line x1="10" y1="50" x2="50" y2="10"/>
+                </g>
             </svg>
-
-            <!-- Dynamic Nodes will be injected here by JS -->
+            <div id="board-grid" class="board-grid"></div>
+            
+            <div id="vfx-jail" class="vfx-layer vfx-jail">
+                <span>🐅 TIGER TRAPPED!</span>
+                <span class="text-sm mt-1">Jail Shutter Closed</span>
+            </div>
+            <div id="vfx-eat" class="vfx-layer vfx-eat">
+                <span>🐐 GOAT CAPTURED!</span>
+                <span class="text-sm mt-1">RIP Goat</span>
+            </div>
         </div>
 
-        <!-- Real-time Interactive Visual Effects Layer -->
-        <div id="vfx-jail" class="vfx-layer jail-shutter text-yellow-400 flex-col">
-            <span>🐅 TIGER TRAPPED!</span>
-            <span class="text-sm mt-2">Jail Shutter Activated</span>
-        </div>
-        <div id="vfx-eat" class="vfx-layer bg-red-900/70 text-white flex-col">
-            <span>🐐 GOAT CAPTURED!</span>
-            <span class="text-sm mt-2">RIP Goat</span>
+        <div class="w-full mt-2 space-y-2">
+            <div class="flex gap-2 overflow-x-auto pb-1" style="-ms-overflow-style: none; scrollbar-width: none;">
+                <button onclick="showChat('👍 Best of Luck!')" class="bg-white border px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap active:bg-gray-200">👍 Best of Luck!</button>
+                <button onclick="showChat('🧠 Great Move!')" class="bg-white border px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap active:bg-gray-200">🧠 Great Move!</button>
+                <button onclick="showChat('😮 Oops!')" class="bg-white border px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap active:bg-gray-200">😮 Oops!</button>
+            </div>
+            <p id="chat-box" class="text-center text-sm font-bold text-green-600 h-5"></p>
+            
+            <div class="flex gap-2">
+                <button onclick="watchAd()" class="flex-1 bg-purple-500 text-white py-2 rounded-xl font-bold text-xs shadow active:scale-95">📺 Ad (+50 🪙)</button>
+                <button onclick="openShop()" class="flex-1 bg-amber-500 text-white py-2 rounded-xl font-bold text-xs shadow active:scale-95">👑 Shop <span id="coin-ui">1500</span>🪙</button>
+            </div>
+            
+            <button onclick="location.reload()" class="w-full bg-red-500 text-white py-3 rounded-xl font-bold shadow mt-2 active:scale-95">🚪 Quit to Menu</button>
         </div>
     </div>
 
-    <!-- Quick Chat and Interactive Controls -->
-    <div class="bg-[#16213e] p-3 rounded-xl shadow-md mt-2 space-y-2">
-        <p class="text-xs text-gray-400 font-semibold mb-1">💬 Quick Chat Template</p>
-        <div class="flex gap-1 overflow-x-auto pb-1 text-[11px]">
-            <button onclick="triggerQuickChat('Best of Luck!')" class="bg-[#0f3460] px-3 py-1.5 rounded-full whitespace-nowrap border border-gray-700 active:bg-blue-600">👍 Best of Luck!</button>
-            <button onclick="triggerQuickChat('Great Move!')" class="bg-[#0f3460] px-3 py-1.5 rounded-full whitespace-nowrap border border-gray-700 active:bg-blue-600">🧠 Great Move!</button>
-            <button onclick="triggerQuickChat('Oops! Hazard!')" class="bg-[#0f3460] px-3 py-1.5 rounded-full whitespace-nowrap border border-gray-700 active:bg-blue-600">😮 Oops!</button>
-            <button onclick="triggerQuickChat('Well Played!')" class="bg-[#0f3460] px-3 py-1.5 rounded-full whitespace-nowrap border border-gray-700 active:bg-blue-600">🤝 Well Played</button>
-        </div>
-        <div id="chat-display" class="text-xs text-center font-bold text-emerald-400 h-4 mt-1"></div>
-    </div>
-
-    <!-- Bottom Actions: Shop & Rewards Mockup -->
-    <div class="grid grid-cols-2 gap-2 mt-2">
-        <button onclick="watchAd()" class="bg-gradient-to-r from-purple-600 to-indigo-600 p-2.5 rounded-xl text-xs font-bold shadow active:scale-95 transition">
-            📺 Watch Ad (+50 🪙)
-        </button>
-        <button onclick="openPremiumShop()" class="bg-gradient-to-r from-amber-500 to-orange-600 p-2.5 rounded-xl text-xs font-bold shadow active:scale-95 transition">
-            👑 Premium Shop (Skins)
-        </button>
-    </div>
-
-    <!-- Audio API setup logic placeholders -->
     <script>
-        // Audio Synthesizer for standalone mobile playback without external files
+        // UI Navigation
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => {
+                s.classList.remove('active-screen');
+                s.classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+            document.getElementById(screenId).classList.add('active-screen');
+        }
+
+        function showChat(msg) {
+            const box = document.getElementById('chat-box');
+            box.innerText = msg;
+            setTimeout(() => box.innerText = '', 3000);
+        }
+
+        let coins = 1500;
+        function watchAd() {
+            alert("भिडियो एड हेर्दै... तपाईले ५० 🪙 कमाउनुभयो!");
+            coins += 50; document.getElementById('coin-ui').innerText = coins;
+        }
+
+        // Fixed the Syntax Error here by using \n inside string
+        function openShop() {
+            alert("प्रिमियम पसल (Premium Shop):\n१. गोल्डेन टाइगर (Golden Tiger) - ५०० 🪙\n२. रोयल बोर्ड (Royal Board) - १००० 🪙\n(यो सुविधा चाँडै थपिनेछ!)");
+        }
+
+        // Audio System
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            osc.connect(gain); gain.connect(audioCtx.destination);
             
             if(type === 'move') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-            } else if(type === 'eat') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.3);
-                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'eat') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-            } else if(type === 'trap') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            } else if (type === 'trap') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
                 osc.frequency.setValueAtTime(220, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.25);
             }
         }
 
-        // Core Game Engine State
-        let boardState = Array(5).fill(null).map(() => Array(5).fill(0));
-        let currentTurn = 'GOAT'; // GOAT starts
-        let goatsLeftToPlace = 20;
+        // Game State Variables
+        let board = Array(5).fill(null).map(() => Array(5).fill(0));
+        let currentTurn = 'GOAT';
+        let goatsLeft = 20;
         let goatsEaten = 0;
-        let coins = 1500;
-        let selectedPiece = null;
-        let turnTimer = 60;
+        let selected = null;
+        let timeLeft = 60;
         let timerInterval;
 
-        // Initializing Tiger Positions (Corners)
-        boardState[0][0] = 'TIGER';
-        boardState[0][4] = 'TIGER';
-        boardState[4][0] = 'TIGER';
-        boardState[4][4] = 'TIGER';
-
-        const boardEl = document.getElementById('board');
-
-        function initBoard() {
-            boardEl.querySelectorAll('.node').forEach(n => n.remove());
-            for (let r = 0; r < 5; r++) {
-                for (let c = 0; c < 5; c++) {
-                    const node = document.createElement('div');
-                    node.className = 'node flex items-center justify-center w-full h-full';
-                    node.dataset.row = r;
-                    node.dataset.col = c;
-                    
-                    const pieceType = boardState[r][c];
-                    if (pieceType) {
-                        const piece = document.createElement('div');
-                        piece.className = `piece ${pieceType.toLowerCase()}`;
-                        piece.innerText = pieceType === 'TIGER' ? '🐅' : '🐐';
-                        node.appendChild(piece);
-                    }
-                    
-                    node.addEventListener('click', () => handleNodeClick(r, c));
-                    boardEl.appendChild(node);
-                }
-            }
-            updateUIStrings();
-        }
-
-        function updateUIStrings() {
-            document.getElementById('current-turn').innerText = currentTurn;
-            document.getElementById('current-turn').className = currentTurn === 'GOAT' ? 'font-bold text-blue-400 text-sm tracking-wider' : 'font-bold text-rose-400 text-sm tracking-wider';
-            document.getElementById('goats-left').innerText = goatsLeftToPlace;
-            document.getElementById('goats-eaten').innerText = `${goatsEaten} / 5`;
-            document.getElementById('coin-count').innerText = coins.toLocaleString();
+        function startOfflineGame() {
+            showScreen('screen-game');
+            // सुरुमै ४ वटा बाघ कुनामा राख्ने
+            board = Array(5).fill(null).map(() => Array(5).fill(0));
+            board[0][0] = 'TIGER'; board[0][4] = 'TIGER';
+            board[4][0] = 'TIGER'; board[4][4] = 'TIGER';
+            
+            currentTurn = 'GOAT'; goatsLeft = 20; goatsEaten = 0; selected = null;
+            updateUI(); drawBoard(); startTimer();
         }
 
         function startTimer() {
             clearInterval(timerInterval);
-            turnTimer = 60;
-            document.getElementById('game-timer').innerText = turnTimer + 's';
+            timeLeft = 60; document.getElementById('timer').innerText = timeLeft + 's';
             timerInterval = setInterval(() => {
-                turnTimer--;
-                document.getElementById('game-timer').innerText = turnTimer + 's';
-                if(turnTimer <= 0) {
+                timeLeft--; document.getElementById('timer').innerText = timeLeft + 's';
+                if(timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    alert(`${currentTurn} ran out of time! Game Over.`);
-                    resetGame();
+                    alert(`समय सकियो! ${currentTurn === 'GOAT' ? '🐅 बाघले' : '🐐 बाख्राले'} जित्यो!`);
+                    location.reload();
                 }
             }, 1000);
         }
 
-        function handleNodeClick(r, c) {
-            const clickedType = boardState[r][c];
+        function drawBoard() {
+            const grid = document.getElementById('board-grid');
+            grid.innerHTML = '';
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    const node = document.createElement('div');
+                    node.className = 'node';
+                    if (board[r][c] !== 0) {
+                        const piece = document.createElement('div');
+                        piece.className = `piece ${board[r][c].toLowerCase()}`;
+                        piece.innerText = board[r][c] === 'TIGER' ? '🐅' : '🐐';
+                        if (selected && selected.r === r && selected.c === c) piece.classList.add('selected');
+                        node.appendChild(piece);
+                    }
+                    node.addEventListener('click', () => handleClick(r, c));
+                    grid.appendChild(node);
+                }
+            }
+        }
 
-            if (currentTurn === 'GOAT' && goatsLeftToPlace > 0) {
-                // Placement Phase for Goats
+        function handleClick(r, c) {
+            const clickedType = board[r][c];
+
+            // बाख्रा राख्ने (Placement Phase)
+            if (currentTurn === 'GOAT' && goatsLeft > 0) {
                 if (clickedType === 0) {
-                    boardState[r][c] = 'GOAT';
-                    goatsLeftToPlace--;
-                    playSound('move');
-                    switchTurn();
+                    board[r][c] = 'GOAT'; goatsLeft--;
+                    playSound('move'); switchTurn();
                 }
                 return;
             }
 
-            // Movement Phase
-            if (selectedPiece) {
-                if (selectedPiece.r === r && selectedPiece.c === c) {
-                    // Deselect
-                    selectedPiece = null;
-                    clearHighlights();
-                    return;
+            // गोटी छान्ने र सार्ने (Movement Phase)
+            if (!selected) {
+                if (clickedType === currentTurn) selectPiece(r, c);
+            } else {
+                if (selected.r === r && selected.c === c) {
+                    selected = null; drawBoard(); // Deselect
+                } else if (isValidMove(selected.r, selected.c, r, c)) {
+                    movePiece(selected.r, selected.c, r, c);
+                } else if (clickedType === currentTurn) {
+                    selectPiece(r, c); // अर्को गोटी छान्ने
                 }
-                
-                // Attempt to move to targeted node
-                if (isValidMove(selectedPiece.r, selectedPiece.c, r, c)) {
-                    executeMove(selectedPiece.r, selectedPiece.c, r, c);
-                } else {
-                    // Switch selection if clicked another owned piece
-                    if (boardState[r][c] === currentTurn) {
-                        selectNewPiece(r, c);
+            }
+        }
+
+        function selectPiece(r, c) {
+            selected = { r, c }; drawBoard();
+            const grid = document.getElementById('board-grid');
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 5; j++) {
+                    if (isValidMove(r, c, i, j)) {
+                        grid.children[i * 5 + j].classList.add('valid-move');
                     }
                 }
-            } else {
-                if (clickedType === currentTurn) {
-                    selectNewPiece(r, c);
-                }
             }
-        }
-
-        function selectNewPiece(r, c) {
-            clearHighlights();
-            selectedPiece = { r, c };
-            const node = boardEl.querySelector(`[data-row='${r}'][data-col='${c}']`);
-            node.querySelector('.piece').classList.add('selected');
-            highlightValidMoves(r, c);
-        }
-
-        function clearHighlights() {
-            boardEl.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
-            boardEl.querySelectorAll('.node').forEach(n => n.classList.remove('valid-move'));
-        }
-
-        function isAdjacent(r1, c1, r2, c2) {
-            const dr = Math.abs(r2 - r1);
-            const dc = Math.abs(c2 - c1);
-            if (dr > 1 || dc > 1) return false;
-            if (dr === 1 && dc === 1) {
-                // Diagonal connection logic for traditional board matrix
-                return (r1 + c1) % 2 === 0;
-            }
-            return true;
         }
 
         function isValidMove(r1, c1, r2, c2) {
-            if (boardState[r2][c2] !== 0) return false; // Target must be empty
-
-            // Standard adjacent steps
-            if (isAdjacent(r1, c1, r2, c2)) return true;
-
-            // Tiger jumping/eating logic
-            if (boardState[r1][c1] === 'TIGER') {
-                const dr = r2 - r1;
-                const dc = c2 - c1;
-                if (Math.abs(dr) === 2 && dc === 0) {
-                    const intermediateRow = r1 + dr / 2;
-                    return boardState[intermediateRow][c1] === 'GOAT';
-                }
-                if (Math.abs(dc) === 2 && dr === 0) {
-                    const intermediateCol = c1 + dc / 2;
-                    return boardState[r1][intermediateCol] === 'GOAT';
-                }
-                if (Math.abs(dr) === 2 && Math.abs(dc) === 2) {
-                    if ((r1 + c1) % 2 === 0) {
-                        const intermediateRow = r1 + dr / 2;
-                        const intermediateCol = c1 + dc / 2;
-                        return boardState[intermediateRow][intermediateCol] === 'GOAT';
-                    }
+            if (board[r2][c2] !== 0) return false;
+            const dr = Math.abs(r2 - r1); const dc = Math.abs(c2 - c1);
+            
+            // नजिकै सर्ने (Straight/Diagonal)
+            if (dr <= 1 && dc <= 1) {
+                if (dr === 1 && dc === 1) return (r1 + c1) % 2 === 0; // छड्के लाइनको नियम
+                return true;
+            }
+            
+            // बाघले जम्प गरेर खाने (Tiger Jump)
+            if (board[r1][c1] === 'TIGER') {
+                if ((dr === 2 && dc === 0) || (dc === 2 && dr === 0) || (dr === 2 && dc === 2 && (r1 + c1) % 2 === 0)) {
+                    return board[(r1 + r2) / 2][(c1 + c2) / 2] === 'GOAT';
                 }
             }
             return false;
         }
 
-        function highlightValidMoves(r, c) {
-            for (let i = 0; i < 5; i++) {
-                for (let j = 0; j < 5; j++) {
-                    if (isValidMove(r, c, i, j)) {
-                        boardEl.querySelector(`[data-row='${i}'][data-col='${j}']`).classList.add('valid-move');
-                    }
-                }
-            }
-        }
+        function movePiece(r1, c1, r2, c2) {
+            const type = board[r1][c1];
+            board[r2][c2] = type; board[r1][c1] = 0;
 
-        function executeMove(r1, c1, r2, c2) {
-            const type = boardState[r1][c1];
-            boardState[r2][c2] = type;
-            boardState[r1][c1] = 0;
-
-            const dr = Math.abs(r2 - r1);
-            const dc = Math.abs(c2 - c1);
-
-            // If Tiger jumped over a goat to capture it
-            if (type === 'TIGER' && (dr === 2 || dc === 2)) {
-                const midR = (r1 + r2) / 2;
-                const midC = (c1 + c2) / 2;
-                boardState[midR][midC] = 0; // Remove eaten goat
-                goatsEaten++;
+            // बाख्रा खाएको चेक गर्ने
+            if (type === 'TIGER' && (Math.abs(r2 - r1) === 2 || Math.abs(c2 - c1) === 2)) {
+                board[(r1 + r2) / 2][(c1 + c2) / 2] = 0;
+                goatsEaten++; playSound('eat');
                 triggerVFX('vfx-eat');
-                playSound('eat');
             } else {
                 playSound('move');
             }
 
-            // Check if this move trapped any specific tiger to trigger Jail Shutter VFX
-            checkTigerTraps();
-
-            selectedPiece = null;
-            clearHighlights();
-            
-            if (checkWinConditions()) return;
-
-            switchTurn();
+            checkTigerTrapped();
+            selected = null;
+            if (!checkWin()) switchTurn();
         }
 
-        function checkTigerTraps() {
-            // Check if any tiger is newly trapped to show jail animation
+        function checkTigerTrapped() {
+            // बाघ थुनिँदा जेलको भिजुअल इफेक्ट (VFX)
             for (let r = 0; r < 5; r++) {
                 for (let c = 0; c < 5; c++) {
-                    if (boardState[r][c] === 'TIGER') {
+                    if (board[r][c] === 'TIGER') {
                         let canMove = false;
                         for (let i = 0; i < 5; i++) {
                             for (let j = 0; j < 5; j++) {
-                                if (isValidMove(r, c, i, j)) { canMove = true; break; }
+                                if (isValidMove(r, c, i, j)) canMove = true;
                             }
-                            if(canMove) break;
                         }
-                        if (!canMove) {
-                            triggerVFX('vfx-jail');
-                            playSound('trap');
+                        if (!canMove && currentTurn === 'GOAT') {
+                            playSound('trap'); triggerVFX('vfx-jail');
                         }
                     }
                 }
@@ -445,83 +378,46 @@
         function triggerVFX(id) {
             const el = document.getElementById(id);
             el.style.opacity = '1';
-            setTimeout(() => el.style.opacity = '0', 1400);
+            setTimeout(() => el.style.opacity = '0', 1200);
         }
 
         function switchTurn() {
             currentTurn = currentTurn === 'GOAT' ? 'TIGER' : 'GOAT';
-            initBoard();
-            startTimer();
+            updateUI(); drawBoard(); startTimer();
         }
 
-        function checkWinConditions() {
+        function checkWin() {
             if (goatsEaten >= 5) {
-                alert('🐅 Tigers Win! 5 Goats Captured.');
-                coins += 200;
-                resetGame();
+                drawBoard();
+                setTimeout(() => { alert('🐅 बाघले जित्यो! (५ बाख्रा खायो)'); coins += 200; location.reload(); }, 200);
                 return true;
             }
-
-// Check if Tigers have any moves left
+            
             let tigerMoves = 0;
             for (let r = 0; r < 5; r++) {
                 for (let c = 0; c < 5; c++) {
-                    if (boardState[r][c] === 'TIGER') {
-                        for (let i = 0; i < 5; i++) {
-                            for (let j = 0; j < 5; j++) {
-                                if (isValidMove(r, c, i, j)) tigerMoves++;
-                            }
+                    if (board[r][c] === 'TIGER') {
+                        for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) {
+                            if (isValidMove(r, c, i, j)) tigerMoves++;
                         }
                     }
                 }
             }
-
-            if (tigerMoves === 0 && goatsLeftToPlace === 0) {
-                alert('🐐 Goats Win! All Tigers are trapped.');
-                coins += 300;
-                resetGame();
+            if (tigerMoves === 0 && goatsLeft === 0) {
+                drawBoard();
+                setTimeout(() => { alert('🐐 बाख्राले जित्यो! (सबै बाघ थुनिए)'); coins += 300; location.reload(); }, 200);
                 return true;
             }
             return false;
         }
 
-        function triggerQuickChat(msg) {
-            const display = document.getElementById('chat-display');
-            display.innerText = msg;
-            setTimeout(() => display.innerText = '', 3000);
+        function updateUI() {
+            const t = document.getElementById('turn-indicator');
+            t.innerText = currentTurn === 'GOAT' ? '🐐 GOAT' : '🐅 TIGER';
+            t.className = currentTurn === 'GOAT' ? 'font-bold text-blue-600 text-base' : 'font-bold text-red-600 text-base';
+            document.getElementById('goats-left').innerText = goatsLeft;
+            document.getElementById('goats-eaten').innerText = `${goatsEaten} / 5`;
         }
-
-        function watchAd() {
-            alert("Playing Reward Video Ad...");
-            setTimeout(() => {
-                coins += 50;
-                updateUIStrings();
-                alert("Earned 50 🪙 coins!");
-            }, 1000);
-        }
-
-        function openPremiumShop() {
-            alert("Premium Shop Preview:
-1. Golden Tiger Skin - 500 Coins
-2. Royal Wooden Board - 1,000 Coins
-Coming soon in next updates!");
-        }
-
-        function resetGame() {
-            boardState = Array(5).fill(null).map(() => Array(5).fill(0));
-            boardState[0][0] = 'TIGER'; boardState[0][4] = 'TIGER';
-            boardState[4][0] = 'TIGER'; boardState[4][4] = 'TIGER';
-            currentTurn = 'GOAT';
-            goatsLeftToPlace = 20;
-            goatsEaten = 0;
-            initBoard();
-            startTimer();
-        }
-
-        // Run on load
-        initBoard();
-        startTimer();
     </script>
 </body>
 </html>
-
