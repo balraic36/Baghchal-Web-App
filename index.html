@@ -9,7 +9,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f0f4f8; /* उज्यालो ब्याकग्राउन्ड */
+            background-color: #f0f4f8; 
             color: #1f2937;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
@@ -24,7 +24,7 @@
         /* Board UI */
         .board-container {
             position: relative;
-            background: #e6c280; /* काठको जस्तो उज्यालो रङ */
+            background: #e6c280; /* काठको उज्यालो रङ */
             border: 6px solid #8b5a2b;
             border-radius: 12px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
@@ -69,6 +69,7 @@
 </head>
 <body>
 
+    <!-- १. मुख्य मेनु (Main Menu) -->
     <div id="screen-menu" class="screen active-screen w-full max-w-md mx-auto text-center">
         <h1 class="text-5xl font-extrabold text-orange-600 mb-2 drop-shadow-md">बाघचाल</h1>
         <p class="text-gray-500 mb-8 font-bold text-sm">Professional Edition</p>
@@ -79,6 +80,7 @@
         </div>
     </div>
 
+    <!-- २. नियमहरू (Rules Screen) -->
     <div id="screen-rules" class="screen w-full max-w-md mx-auto text-center">
         <h2 class="text-3xl font-bold text-orange-600 mb-4">खेल्ने नियम</h2>
         <div class="bg-white p-6 rounded-2xl w-full text-left space-y-3 mb-6 shadow-md border border-gray-200 text-sm text-gray-700">
@@ -90,6 +92,7 @@
         <button onclick="showScreen('screen-menu')" class="w-full bg-gray-300 text-gray-800 py-4 rounded-xl font-bold text-xl active:scale-95 transition">⬅ पछाडि</button>
     </div>
 
+    <!-- ३. मोड छान्ने (Game Mode Selection) -->
     <div id="screen-mode" class="screen w-full max-w-md mx-auto">
         <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">मोड छान्नुहोस्</h2>
         
@@ -111,8 +114,10 @@
         <button onclick="showScreen('screen-menu')" class="w-full bg-gray-300 text-gray-800 py-4 rounded-xl font-bold text-xl active:scale-95 transition">⬅ पछाडि</button>
     </div>
 
+    <!-- ४. मुख्य गेम स्क्रिन (Main Game Board) -->
     <div id="screen-game" class="screen w-full max-w-md mx-auto justify-between p-2">
         
+        <!-- Top Stats -->
         <div class="flex justify-between items-center bg-white p-3 rounded-xl w-full mb-2 shadow-sm border border-gray-200">
             <div class="text-center">
                 <p class="text-[10px] text-gray-400 font-bold uppercase">Turn</p>
@@ -132,6 +137,7 @@
             </div>
         </div>
 
+        <!-- The Board -->
         <div class="board-container mx-auto">
             <svg class="line-svg" viewBox="0 0 100 100">
                 <g stroke="#5c3a21" stroke-width="1.2">
@@ -147,6 +153,7 @@
             </svg>
             <div id="board-grid" class="board-grid"></div>
             
+            <!-- VFX Overlays -->
             <div id="vfx-jail" class="vfx-layer vfx-jail">
                 <span>🐅 TIGER TRAPPED!</span>
                 <span class="text-sm mt-1">Jail Shutter Closed</span>
@@ -157,6 +164,7 @@
             </div>
         </div>
 
+        <!-- Chat & Economy Actions -->
         <div class="w-full mt-2 space-y-2">
             <div class="flex gap-2 overflow-x-auto pb-1" style="-ms-overflow-style: none; scrollbar-width: none;">
                 <button onclick="showChat('👍 Best of Luck!')" class="bg-white border px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap active:bg-gray-200">👍 Best of Luck!</button>
@@ -174,8 +182,8 @@
         </div>
     </div>
 
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // UI Navigation
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => {
                 s.classList.remove('active-screen');
@@ -197,7 +205,6 @@
             coins += 50; document.getElementById('coin-ui').innerText = coins;
         }
 
-        // Fixed the Syntax Error here by using \n inside string
         function openShop() {
             alert("प्रिमियम पसल (Premium Shop):\n१. गोल्डेन टाइगर (Golden Tiger) - ५०० 🪙\n२. रोयल बोर्ड (Royal Board) - १००० 🪙\n(यो सुविधा चाँडै थपिनेछ!)");
         }
@@ -421,4 +428,3 @@
     </script>
 </body>
 </html>
-
